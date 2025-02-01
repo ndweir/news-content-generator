@@ -4,203 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minnesota Multi-Lingual News Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8f9fa;
-            margin: 0;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1200px;
-            padding: 2rem;
-        }
-        .header {
-            background: linear-gradient(135deg, #0056b3, #007bff);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .header h1 {
-            margin: 0;
-            font-weight: 600;
-        }
-        .header p {
-            margin: 0.5rem 0 0;
-            opacity: 0.9;
-        }
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-        .card-header {
-            background: white;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            padding: 1rem 1.5rem;
-        }
-        .card-body {
-            padding: 1.5rem;
-        }
-        .preview-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        .video-preview {
-            background: #1a1a1a;
-            border-radius: 16px;
-            overflow: hidden;
-            aspect-ratio: 9/16;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            position: relative;
-        }
-        .video-preview video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .video-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            text-align: center;
-            padding: 1rem;
-            transition: opacity 0.3s;
-        }
-        .video-preview:hover .video-overlay {
-            opacity: 0;
-        }
-        .mock-video {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(45deg, #2a2a2a, #1a1a1a);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .language-selector, .style-selector {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 1rem 0;
-        }
-        .option-chip {
-            flex: 0 0 auto;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: #e9ecef;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            font-weight: 500;
-        }
-        .option-chip:hover {
-            background: #dee2e6;
-        }
-        .option-chip.active {
-            background: #007bff;
-            color: white;
-        }
-        .option-chip.active:hover {
-            background: #0056b3;
-        }
-        .option-chip i {
-            margin-right: 6px;
-        }
-        .progress-container {
-            position: relative;
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            overflow: hidden;
-            margin: 1rem 0;
-        }
-        .progress-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            background: #007bff;
-            transition: width 0.3s ease;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        .status-badge.processing {
-            background: #ffd43b;
-            color: #000;
-        }
-        .status-badge.done {
-            background: #51cf66;
-            color: white;
-        }
-        .status-badge.error {
-            background: #ff6b6b;
-            color: white;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.02); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .generating {
-            animation: pulse 2s infinite;
-        }
-        .btn-generate {
-            background: linear-gradient(135deg, #0056b3, #007bff);
-            border: none;
-            padding: 12px 24px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .btn-generate:active {
-            transform: translateY(0);
-        }
-        .upload-area {
-            border: 2px dashed #dee2e6;
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .upload-area:hover {
-            border-color: #007bff;
-            background: rgba(0,123,255,0.05);
-        }
-        .upload-area i {
-            font-size: 2rem;
-            color: #6c757d;
-            margin-bottom: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <div class="header">
@@ -210,37 +16,62 @@
         </div>
     </div>
 
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Create News Content</h5>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="audioUploadSwitch">
-                            <label class="form-check-label" for="audioUploadSwitch">Upload Audio</label>
-                        </div>
+    <main class="container">
+        <div class="content-grid">
+            <!-- Main Form Column -->
+            <div class="main-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Create News Content</h5>
                     </div>
                     <div class="card-body">
                         <form id="newsForm">
-                            <div id="textInput" class="mb-3">
-                                <label for="articleText" class="form-label">News Article or Story</label>
-                                <textarea class="form-control" id="articleText" rows="6" 
-                                    placeholder="Paste your news article or story here..."></textarea>
-                            </div>
+                            <!-- Input Options -->
+                            <div class="input-group">
+                                <label class="form-label">Input Type</label>
+                                <div class="option-group">
+                                    <div class="option-chip active" data-input="text">
+                                        <i class="bi bi-file-text"></i>Text
+                                    </div>
+                                    <div class="option-chip" data-input="audio">
+                                        <i class="bi bi-mic"></i>Audio
+                                    </div>
+                                    <div class="option-chip" data-input="video">
+                                        <i class="bi bi-camera-video"></i>Video
+                                    </div>
+                                </div>
 
-                            <div id="audioInput" class="mb-3 d-none">
-                                <div class="upload-area" id="dropZone">
-                                    <i class="bi bi-cloud-upload"></i>
-                                    <h5>Drop your audio file here</h5>
-                                    <p class="text-muted">or click to select a file</p>
-                                    <input type="file" id="audioFile" accept="audio/*" class="d-none">
+                                <!-- Text Input -->
+                                <div id="textInput" class="input-section">
+                                    <textarea class="form-control" id="articleText" 
+                                        placeholder="Paste your news article or story here..."></textarea>
+                                </div>
+
+                                <!-- Audio Input -->
+                                <div id="audioInput" class="input-section" style="display: none;">
+                                    <div class="file-upload" id="audioDropZone">
+                                        <i class="bi bi-cloud-upload"></i>
+                                        <h5>Drop your audio file here</h5>
+                                        <p>or click to select a file</p>
+                                        <input type="file" id="audioFile" accept="audio/*" style="display: none;">
+                                    </div>
+                                </div>
+
+                                <!-- Video Input -->
+                                <div id="videoInput" class="input-section" style="display: none;">
+                                    <div class="file-upload" id="videoDropZone">
+                                        <i class="bi bi-cloud-upload"></i>
+                                        <h5>Drop your video file here</h5>
+                                        <p>or click to select a file</p>
+                                        <input type="file" id="videoFile" accept="video/*" style="display: none;">
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="mb-4">
+                            <!-- Language Options -->
+                            <div class="input-group">
                                 <label class="form-label">Target Languages</label>
-                                <div class="language-selector">
+                                <div class="option-group">
                                     <div class="option-chip active" data-lang="en">
                                         <i class="bi bi-translate"></i>English
                                     </div>
@@ -256,309 +87,97 @@
                                 </div>
                             </div>
 
-                            <div class="mb-4">
-                                <label class="form-label">Voice Style</label>
-                                <div class="style-selector">
-                                    <div class="option-chip active" data-style="news">
-                                        <i class="bi bi-broadcast"></i>News Anchor
+                            <!-- Output Options -->
+                            <div class="input-group">
+                                <label class="form-label">Output Format</label>
+                                <div class="option-group">
+                                    <div class="option-chip active" data-output="text">
+                                        <i class="bi bi-file-text"></i>Text
                                     </div>
-                                    <div class="option-chip" data-style="cronkite">
-                                        <i class="bi bi-mic"></i>Walter Cronkite
+                                    <div class="option-chip" data-output="audio">
+                                        <i class="bi bi-headphones"></i>Audio
                                     </div>
-                                    <div class="option-chip" data-style="friendly">
-                                        <i class="bi bi-emoji-smile"></i>Friendly
-                                    </div>
-                                    <div class="option-chip" data-style="casual">
-                                        <i class="bi bi-chat"></i>Casual
+                                    <div class="option-chip" data-output="video">
+                                        <i class="bi bi-camera-video"></i>Video
                                     </div>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-generate">
-                                <i class="bi bi-play-circle me-2"></i>Generate Videos
+                            <!-- Animation Style -->
+                            <div class="input-group animation-style-section">
+                                <label class="form-label">Animation Style</label>
+                                <div class="option-group animation-styles">
+                                    <div class="option-chip active" data-style="avatar">
+                                        <i class="bi bi-person-circle"></i>Realistic Avatar
+                                    </div>
+                                    <div class="option-chip" data-style="cartoon">
+                                        <i class="bi bi-emoji-laughing"></i>Cartoon
+                                    </div>
+                                    <div class="option-chip" data-style="anime">
+                                        <i class="bi bi-star"></i>Anime
+                                    </div>
+                                    <div class="option-chip" data-style="claymation">
+                                        <i class="bi bi-brush"></i>Claymation
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Closed Captions Options -->
+                            <div class="input-group">
+                                <label class="form-label">Closed Captions</label>
+                                <div class="option-group">
+                                    <div class="option-chip active" data-cc="auto">
+                                        <i class="bi bi-badge-cc"></i>Auto-Generate
+                                    </div>
+                                    <div class="option-chip" data-cc="upload">
+                                        <i class="bi bi-upload"></i>Upload SRT
+                                    </div>
+                                </div>
+                                <div id="srtUpload" style="display: none;">
+                                    <div class="file-upload" id="srtDropZone">
+                                        <i class="bi bi-file-text"></i>
+                                        <h5>Drop your SRT file here</h5>
+                                        <p>or click to select a file</p>
+                                        <input type="file" id="srtFile" accept=".srt" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-play-circle"></i>Generate Content
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Generation Status</h5>
+            <!-- Preview Column -->
+            <div class="preview-column">
+                <div class="video-preview" id="videoPreview">
+                    <div class="video-overlay preview-state">
+                        <div class="preview-placeholder">
+                            <i class="bi bi-camera-video"></i>
+                            <span>Video Preview</span>
+                        </div>
+                        <button class="expand-btn" id="expandBtn">
+                            <i class="bi bi-arrows-fullscreen"></i>
+                        </button>
                     </div>
-                    <div class="card-body" id="statusContainer">
-                        <p class="text-muted text-center">No active generations</p>
+                    <div class="video-overlay processing-state" style="display: none;">
+                        <div class="style-icon">👤</div>
+                        <div class="status-badge processing">
+                            <i class="bi bi-hourglass-split"></i>
+                            Processing
+                        </div>
+                        <div class="progress-bar">
+                            <div style="width: 60%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </main>
 
-        <div class="preview-container" id="previewContainer">
-            <!-- Video previews will be added here -->
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('newsForm');
-            const previewContainer = document.getElementById('previewContainer');
-            const statusContainer = document.getElementById('statusContainer');
-            const audioUploadSwitch = document.getElementById('audioUploadSwitch');
-            const textInput = document.getElementById('textInput');
-            const audioInput = document.getElementById('audioInput');
-            const dropZone = document.getElementById('dropZone');
-            const audioFile = document.getElementById('audioFile');
-
-            // Handle input mode switching
-            audioUploadSwitch.addEventListener('change', function() {
-                textInput.classList.toggle('d-none', this.checked);
-                audioInput.classList.toggle('d-none', !this.checked);
-            });
-
-            // Handle file upload UI
-            dropZone.addEventListener('click', () => audioFile.click());
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('border-primary');
-            });
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('border-primary');
-            });
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('border-primary');
-                const file = e.dataTransfer.files[0];
-                if (file && file.type.startsWith('audio/')) {
-                    handleAudioFile(file);
-                }
-            });
-            audioFile.addEventListener('change', (e) => {
-                if (e.target.files[0]) {
-                    handleAudioFile(e.target.files[0]);
-                }
-            });
-
-            // Handle language and style selection
-            document.querySelectorAll('.option-chip').forEach(chip => {
-                chip.addEventListener('click', () => {
-                    if (chip.closest('.language-selector')) {
-                        chip.classList.toggle('active');
-                    } else {
-                        chip.closest('.style-selector').querySelectorAll('.option-chip').forEach(c => {
-                            c.classList.remove('active');
-                        });
-                        chip.classList.add('active');
-                    }
-                });
-            });
-
-            // Handle form submission
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const selectedLangs = Array.from(document.querySelectorAll('.language-selector .option-chip.active'))
-                    .map(opt => opt.dataset.lang);
-                const selectedStyle = document.querySelector('.style-selector .option-chip.active').dataset.style;
-
-                let content;
-                if (audioUploadSwitch.checked) {
-                    if (!audioFile.files[0]) {
-                        showAlert('Please upload an audio file');
-                        return;
-                    }
-                    content = await handleAudioUpload(audioFile.files[0]);
-                } else {
-                    content = document.getElementById('articleText').value.trim();
-                    if (!content) {
-                        showAlert('Please enter an article');
-                        return;
-                    }
-                }
-
-                if (selectedLangs.length === 0) {
-                    showAlert('Please select at least one language');
-                    return;
-                }
-
-                // Clear previous previews
-                previewContainer.innerHTML = '';
-                updateStatus('Starting content generation...', 'processing');
-
-                // Generate content for each language
-                for (const lang of selectedLangs) {
-                    try {
-                        const preview = createVideoPreview(lang);
-                        previewContainer.appendChild(preview);
-
-                        // Generate content
-                        const data = await generateContent(content, lang, selectedStyle);
-                        if (!data.video_id) throw new Error('No video ID returned');
-
-                        // Poll for video status
-                        await pollVideoStatus(data.video_id, preview, lang);
-
-                    } catch (error) {
-                        console.error(`Error generating ${lang} content:`, error);
-                        showError(lang, error.message);
-                    }
-                }
-            });
-
-            async function handleAudioFile(file) {
-                const filename = file.name;
-                dropZone.innerHTML = `
-                    <i class="bi bi-file-earmark-music"></i>
-                    <h5>${filename}</h5>
-                    <p class="text-muted">Click to change file</p>
-                `;
-            }
-
-            async function handleAudioUpload(file) {
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const response = await fetch('/api/transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) throw new Error('Transcription failed');
-                const data = await response.json();
-                return data.transcription;
-            }
-
-            async function generateContent(content, language, style) {
-                updateStatus(`Generating ${getLangName(language)} content...`, 'processing');
-                
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: content, language, style })
-                });
-
-                if (!response.ok) throw new Error('Generation failed');
-                return response.json();
-            }
-
-            async function pollVideoStatus(videoId, preview, language) {
-                let attempts = 0;
-                const maxAttempts = 60; // 5 minutes maximum
-
-                while (attempts < maxAttempts) {
-                    const response = await fetch(`/api/video-status/${videoId}`);
-                    if (!response.ok) throw new Error('Status check failed');
-
-                    const data = await response.json();
-                    updatePreviewStatus(preview, data.status, language);
-
-                    if (data.status === 'done') {
-                        updatePreviewContent(preview, data, language);
-                        updateStatus(`${getLangName(language)} video ready!`, 'done');
-                        return;
-                    } else if (data.status === 'error') {
-                        throw new Error(data.error || 'Video generation failed');
-                    }
-
-                    attempts++;
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                }
-
-                throw new Error('Video generation timed out');
-            }
-
-            function createVideoPreview(language) {
-                const preview = document.createElement('div');
-                preview.className = 'video-preview';
-                preview.innerHTML = `
-                    <div class="video-overlay generating">
-                        <i class="bi bi-camera-video" style="font-size: 2rem"></i>
-                        <h4 class="mt-3">${getLangName(language)}</h4>
-                        <div class="progress-container mt-3" style="width: 80%">
-                            <div class="progress-bar" style="width: 0%"></div>
-                        </div>
-                        <p class="status mt-2">Initializing...</p>
-                    </div>
-                `;
-                return preview;
-            }
-
-            function updatePreviewStatus(preview, status, language) {
-                const overlay = preview.querySelector('.video-overlay');
-                const statusText = preview.querySelector('.status');
-                const progress = preview.querySelector('.progress-bar');
-
-                if (status === 'processing') {
-                    statusText.textContent = `Processing ${getLangName(language)} video...`;
-                    progress.style.width = '50%';
-                } else if (status === 'done') {
-                    progress.style.width = '100%';
-                    overlay.classList.remove('generating');
-                }
-            }
-
-            function updatePreviewContent(preview, data, language) {
-                preview.innerHTML = `
-                    <video src="${data.local_url}" controls></video>
-                    <div class="video-overlay">
-                        <h4>${getLangName(language)}</h4>
-                        <div class="btn-group mt-3">
-                            <button class="btn btn-light btn-sm" onclick="window.open('${data.local_url}', '_blank')">
-                                <i class="bi bi-download"></i> Download
-                            </button>
-                            <button class="btn btn-light btn-sm share-btn" data-url="${data.local_url}">
-                                <i class="bi bi-share"></i> Share
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                // Add hover effect to show/hide overlay
-                const video = preview.querySelector('video');
-                video.addEventListener('play', () => {
-                    preview.querySelector('.video-overlay').style.opacity = '0';
-                });
-                video.addEventListener('pause', () => {
-                    preview.querySelector('.video-overlay').style.opacity = '1';
-                });
-            }
-
-            function updateStatus(message, type = 'processing') {
-                statusContainer.innerHTML = `
-                    <div class="d-flex align-items-center justify-content-center">
-                        <span class="status-badge ${type}">${message}</span>
-                    </div>
-                `;
-            }
-
-            function showError(language, message) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'alert alert-danger';
-                errorDiv.textContent = `Error generating ${getLangName(language)} content: ${message}`;
-                statusContainer.appendChild(errorDiv);
-            }
-
-            function showAlert(message) {
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-warning alert-dismissible fade show';
-                alert.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                form.insertBefore(alert, form.firstChild);
-            }
-
-            function getLangName(code) {
-                const names = {
-                    en: 'English',
-                    es: 'Spanish',
-                    so: 'Somali',
-                    hmn: 'Hmong'
-                };
-                return names[code] || code;
-            }
-        });
-    </script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>
