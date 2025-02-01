@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize style selection
+    const styleOptions = document.querySelectorAll('.style-option');
+    styleOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            styleOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+        });
+    });
     const form = document.getElementById('newsForm');
     const progressArea = document.getElementById('progressArea');
     const progressBar = document.querySelector('.progress-bar');

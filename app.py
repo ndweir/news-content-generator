@@ -25,6 +25,40 @@ print(f"OpenAI API Key first 10 chars: {client.api_key[:10] if client.api_key el
 tts_client = texttospeech.TextToSpeechClient()
 translate_client = translate.TranslationServiceClient()
 
+# Character styles for content generation
+CONTENT_STYLES = {
+    'ruff': {
+        'name': 'Ruff Ruffman',
+        'prompt': 'Create an educational, playful summary with science facts and dog-themed humor',
+        'voice': 'enthusiastic, friendly',
+        'video_style': 'vertical, energetic, educational'
+    },
+    'felix': {
+        'name': 'Felix the Cat',
+        'prompt': 'Write a whimsical, clever summary with classic cartoon charm and subtle humor',
+        'voice': 'smooth, mischievous',
+        'video_style': 'vertical, animated, playful'
+    },
+    'cronkite': {
+        'name': 'Walter Cronkite Style',
+        'prompt': 'Deliver a trustworthy, authoritative summary in classic broadcast style',
+        'voice': 'deep, authoritative',
+        'video_style': 'vertical, professional, news-style'
+    },
+    'wordgirl': {
+        'name': 'WordGirl',
+        'prompt': 'Create an educational summary that explains complex words and concepts',
+        'voice': 'confident, educational',
+        'video_style': 'vertical, superhero, educational'
+    },
+    'anime': {
+        'name': 'Anime Style',
+        'prompt': 'Write an engaging summary with anime-style narrative flair and emotional depth',
+        'voice': 'expressive, dynamic',
+        'video_style': 'vertical, anime-inspired, dramatic'
+    }
+}
+
 SUPPORTED_LANGUAGES = {
     'en': 'English',
     'es': 'Spanish',
@@ -43,36 +77,39 @@ def summarize():
         data = request.json
         text = data.get('text')
         target_lang = data.get('target_language', 'en')
+        style = data.get('style', 'cronkite')
         
-        print(f"Processing summary for language: {target_lang}")
+        if style not in CONTENT_STYLES:
+            return jsonify({'error': 'Invalid style selected'}), 400
+            
+        style_config = CONTENT_STYLES[style]
+        print(f"Processing {style_config['name']} style summary for {SUPPORTED_LANGUAGES[target_lang]}")
         
-        # Generate summary using OpenAI
-        summary_prompt = f"Summarize this article in under 75 words. Keep it factual and do not add information not present in the text:\n\n{text}"
+        # Generate styled summary using OpenAI
+        summary_prompt = f"{style_config['prompt']}. Optimize for TikTok/Instagram vertical video format (30-60 seconds):\n\n{text}"
         
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a professional news summarizer. Create concise, accurate summaries without adding any information not present in the original text."},
+                    {"role": "system", "content": f"You are {style_config['name']}. Create engaging, mobile-first content that's perfect for social media."},
                     {"role": "user", "content": summary_prompt}
                 ]
             )
             
-            # TEMPORARY TEST OVERRIDE
-            summary = get_mock_style_summary("news", target_lang)
-            # summary = response.choices[0].message.content
-            print(f"Generated English summary: {summary[:100]}...")
+            summary = response.choices[0].message.content
+            print(f"Generated {style_config['name']} summary: {summary[:100]}...")
 
             # Translate if needed
             if target_lang != 'en':
                 print(f"Translating to {SUPPORTED_LANGUAGES[target_lang]}")
-                translation_prompt = f"Translate this text to {SUPPORTED_LANGUAGES[target_lang]}:\n\n{summary}"
+                translation_prompt = f"Translate this {style_config['name']} style content to {SUPPORTED_LANGUAGES[target_lang]}. Maintain the style and tone:\n\n{summary}"
                 
                 try:
-                    translation_response = openai.chat.completions.create(
+                    translation_response = client.chat.completions.create(
                         model="gpt-3.5-turbo",
                         messages=[
-                            {"role": "system", "content": f"You are a professional translator. Translate the following text to {SUPPORTED_LANGUAGES[target_lang]} while maintaining the original meaning."},
+                            {"role": "system", "content": f"You are a creative translator specializing in {style_config['name']} style content."},
                             {"role": "user", "content": translation_prompt}
                         ]
                     )
@@ -81,20 +118,34 @@ def summarize():
                     
                 except Exception as translation_error:
                     print(f"Translation error: {str(translation_error)}")
-                    return jsonify({'error': f'Translation failed: {str(translation_error)}'}), 500
+                    return jsonify({
+                        'error': 'Translation failed',
+                        'details': str(translation_error)
+                    }), 500
 
-            return jsonify({'summary': summary})
+            return jsonify({
+                'summary': summary,
+                'style': style_config['name'],
+                'voice_style': style_config['voice'],
+                'video_style': style_config['video_style']
+            })
             
         except Exception as openai_error:
             print(f"OpenAI API error: {str(openai_error)}")
-            return jsonify({'error': f'OpenAI API error: {str(openai_error)}'}), 500
+            return jsonify({
+                'error': 'Content generation failed',
+                'details': str(openai_error)
+            }), 500
 
     except Exception as e:
         import traceback
         print(f"Error in summarize endpoint: {str(e)}")
         print("Full traceback:")
         print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'error': 'Server error',
+            'details': str(e)
+        }), 500
 
 @app.route('/api/generate-speech', methods=['POST'])
 def generate_speech():

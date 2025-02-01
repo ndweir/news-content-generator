@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multilingual News Generator</title>
+    <title>Social Media Content Generator</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
@@ -13,14 +14,60 @@
     <div class="container py-4">
         <div class="generator-container animate__animated animate__fadeIn">
             <div class="text-center mb-4">
-                <h2 class="heading-primary">Transform Your News</h2>
-                <p class="heading-subtitle">Create engaging multilingual content for your community</p>
+                <h2 class="heading-primary">Create Viral Content</h2>
+                <p class="heading-subtitle">Generate engaging TikTok & Instagram videos in multiple languages</p>
             </div>
                         <form id="newsForm" class="custom-form">
                             <div class="form-group mb-4">
-                                <label for="articleText" class="form-label">Your News Article</label>
+                                <label for="articleText" class="form-label">Your Story</label>
                                 <textarea class="form-control custom-input" id="articleText" rows="6" required 
-                                    placeholder="Paste your article text here..."></textarea>
+                                    placeholder="Paste your story or news article here (will be optimized for 30-60 second videos)..."></textarea>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label class="form-label">Content Style</label>
+                                <div class="style-grid">
+                                    <div class="style-option" data-style="ruff">
+                                        <input type="radio" name="style" id="style_ruff" value="ruff" checked>
+                                        <label for="style_ruff">
+                                            <span class="style-icon">🐶</span>
+                                            <span class="style-name">Ruff Ruffman</span>
+                                            <span class="style-desc">Educational & Fun</span>
+                                        </label>
+                                    </div>
+                                    <div class="style-option" data-style="felix">
+                                        <input type="radio" name="style" id="style_felix" value="felix">
+                                        <label for="style_felix">
+                                            <span class="style-icon">🐱</span>
+                                            <span class="style-name">Felix the Cat</span>
+                                            <span class="style-desc">Classic & Whimsical</span>
+                                        </label>
+                                    </div>
+                                    <div class="style-option" data-style="cronkite">
+                                        <input type="radio" name="style" id="style_cronkite" value="cronkite">
+                                        <label for="style_cronkite">
+                                            <span class="style-icon">🎙️</span>
+                                            <span class="style-name">Cronkite Style</span>
+                                            <span class="style-desc">Classic News</span>
+                                        </label>
+                                    </div>
+                                    <div class="style-option" data-style="wordgirl">
+                                        <input type="radio" name="style" id="style_wordgirl" value="wordgirl">
+                                        <label for="style_wordgirl">
+                                            <span class="style-icon">📚</span>
+                                            <span class="style-name">WordGirl</span>
+                                            <span class="style-desc">Educational Hero</span>
+                                        </label>
+                                    </div>
+                                    <div class="style-option" data-style="anime">
+                                        <input type="radio" name="style" id="style_anime" value="anime">
+                                        <label for="style_anime">
+                                            <span class="style-icon">🎨</span>
+                                            <span class="style-name">Anime Style</span>
+                                            <span class="style-desc">Dynamic & Expressive</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="form-group mb-4">
