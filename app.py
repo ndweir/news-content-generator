@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template, send_file
 from dotenv import load_dotenv
 import os
 import openai
-from google.cloud import texttospeech, translate
 import requests
 import json
 import tempfile
@@ -11,7 +10,9 @@ import time
 from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
 from functools import wraps
-from typing import Optional, Dict, Any
+from typing import Dict, Any, Optional
+from pathlib import Path
+import whisper
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,292 +29,270 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['JSON_SORT_KEYS'] = False  # Preserve JSON response order
+app.config['AUDIO_FOLDER'] = 'uploads/audio'
+app.config['VIDEO_FOLDER'] = 'uploads/video'
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
+app.config['JSON_SORT_KEYS'] = False
 
-# Ensure upload directory exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Create necessary directories
+for folder in [app.config['UPLOAD_FOLDER'], app.config['AUDIO_FOLDER'], app.config['VIDEO_FOLDER']]:
+    Path(folder).mkdir(parents=True, exist_ok=True)
 
-# Configure API clients
+# Initialize API clients
 client = openai.Client(api_key=os.getenv('OPENAI_API_KEY'))
-logger.info(f"OpenAI API Key loaded: {'Yes' if client.api_key else 'No'}")
 
-tts_client = texttospeech.TextToSpeechClient()
-translate_client = translate.TranslationServiceClient()
+# Load Whisper model for transcription
+whisper_model = whisper.load_model('base')
 
-# Character styles for content generation
-CONTENT_STYLES = {
-    'ruff': {
-        'name': 'Ruff Ruffman',
-        'prompt': 'Create an educational, playful summary with science facts and dog-themed humor',
-        'voice': 'enthusiastic, friendly',
-        'video_style': 'vertical, energetic, educational'
+# Initialize D-ID client
+did_api_key = os.getenv('DID_API_KEY')
+did_api_url = 'https://api.d-id.com'
+
+# Log initialization status
+logger.info(f"OpenAI API Key loaded: {'Yes' if os.getenv('OPENAI_API_KEY') else 'No'}")
+logger.info(f"D-ID API Key loaded: {'Yes' if did_api_key else 'No'}")
+
+# Language configurations
+LANGUAGES = {
+    'en': {
+        'name': 'English',
+        'voice': {
+            'news': 'nova',      # Professional and clear
+            'cronkite': 'echo',  # Authoritative and trustworthy
+            'friendly': 'shimmer', # Warm and approachable
+            'casual': 'fable'    # Youthful and engaging
+        },
+        'whisper_code': 'en',
+        'did_code': 'en-US'
     },
-    'felix': {
-        'name': 'Felix the Cat',
-        'prompt': 'Write a whimsical, clever summary with classic cartoon charm and subtle humor',
-        'voice': 'smooth, mischievous',
-        'video_style': 'vertical, animated, playful'
+    'es': {
+        'name': 'Spanish',
+        'voice': {
+            'news': 'nova',
+            'cronkite': 'echo',
+            'friendly': 'shimmer',
+            'casual': 'fable'
+        },
+        'whisper_code': 'es',
+        'did_code': 'es-ES'
     },
-    'cronkite': {
-        'name': 'Walter Cronkite Style',
-        'prompt': 'Deliver a trustworthy, authoritative summary in classic broadcast style',
-        'voice': 'deep, authoritative',
-        'video_style': 'vertical, professional, news-style'
+    'so': {
+        'name': 'Somali',
+        'voice': {
+            'news': 'nova',
+            'cronkite': 'echo',
+            'friendly': 'shimmer',
+            'casual': 'fable'
+        },
+        'whisper_code': 'so',
+        'did_code': 'so-SO'
     },
-    'wordgirl': {
-        'name': 'WordGirl',
-        'prompt': 'Create an educational summary that explains complex words and concepts',
-        'voice': 'confident, educational',
-        'video_style': 'vertical, superhero, educational'
-    },
-    'anime': {
-        'name': 'Anime Style',
-        'prompt': 'Write an engaging summary with anime-style narrative flair and emotional depth',
-        'voice': 'expressive, dynamic',
-        'video_style': 'vertical, anime-inspired, dramatic'
+    'hmn': {
+        'name': 'Hmong',
+        'voice': {
+            'news': 'nova',
+            'cronkite': 'echo',
+            'friendly': 'shimmer',
+            'casual': 'fable'
+        },
+        'whisper_code': 'hmn',
+        'did_code': 'hmn'
     }
 }
 
-SUPPORTED_LANGUAGES = {
-    'en': 'English',
-    'es': 'Spanish',
-    'hmn': 'Hmong',
-    'so': 'Somali'
+# Voice styles
+VOICE_STYLES = {
+    'news': {
+        'name': 'News Anchor',
+        'prompt': 'Create a concise, factual news summary suitable for broadcast. Focus on key facts and maintain journalistic neutrality.',
+        'model': 'tts-1-hd',  # Higher quality for professional broadcasts
+        'avatar_id': 'news_anchor_1',
+        'video_style': 'professional'
+    },
+    'cronkite': {
+        'name': 'Walter Cronkite Style',
+        'prompt': 'Create a trustworthy, authoritative news summary in the style of Walter Cronkite. Use clear, direct language and emphasize the gravity of the news.',
+        'model': 'tts-1-hd',  # Higher quality for classic broadcast style
+        'avatar_id': 'cronkite_style',
+        'video_style': 'classic_broadcast'
+    },
+    'friendly': {
+        'name': 'Friendly Presenter',
+        'prompt': 'Create an engaging, conversational summary that feels warm and approachable. Break down complex topics into simple terms.',
+        'model': 'tts-1',  # Standard quality for casual content
+        'avatar_id': 'friendly_presenter',
+        'video_style': 'casual'
+    },
+    'casual': {
+        'name': 'Social Media Style',
+        'prompt': 'Create a relaxed, informal summary suitable for social media. Use contemporary language while maintaining accuracy.',
+        'model': 'tts-1',  # Standard quality for social content
+        'avatar_id': 'social_presenter',
+        'video_style': 'social'
+    }
 }
 
 @app.route('/')
 def index():
-    return render_template('index.html', languages=SUPPORTED_LANGUAGES)
+    return render_template('index.html')
 
-def validate_request(required_fields: Dict[str, type] = None) -> callable:
-    """Decorator to validate request data"""
-    def decorator(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            try:
-                data = request.get_json()
-                if data is None:
-                    return jsonify({'error': 'No JSON data provided'}), 400
-                
-                if required_fields:
-                    for field, field_type in required_fields.items():
-                        value = data.get(field)
-                        if value is None:
-                            return jsonify({'error': f'Missing required field: {field}'}), 400
-                        if not isinstance(value, field_type):
-                            return jsonify({'error': f'Invalid type for field {field}. Expected {field_type.__name__}'}), 400
-                
-                return f(*args, **kwargs)
-            except Exception as e:
-                logger.error(f'Request validation error: {str(e)}')
-                return jsonify({'error': 'Invalid request format'}), 400
-        return wrapper
-    return decorator
-
-def handle_api_error(func: callable) -> callable:
-    """Decorator to handle API errors consistently"""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            logger.error(f'API error in {func.__name__}: {str(e)}', exc_info=True)
-            return jsonify({
-                'error': 'Internal server error',
-                'message': str(e)
-            }), 500
-    return wrapper
-
-@app.route('/api/summarize', methods=['POST'])
-@validate_request({'text': str, 'target_language': str, 'style': str})
-@handle_api_error
-def summarize():
-    logger.info("=== Starting summarize request ===")
-    data = request.json
-    text = data['text'].strip()
-    target_lang = data['target_language']
-    style = data['style']
+@app.route('/api/transcribe', methods=['POST'])
+def transcribe_audio():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
     
-    # Validate input length
-    if len(text) < 10:
-        return jsonify({'error': 'Text is too short. Minimum 10 characters required.'}), 400
-    if len(text) > 5000:
-        return jsonify({'error': 'Text is too long. Maximum 5000 characters allowed.'}), 400
+    file = request.files['file']
+    if not file.filename:
+        return jsonify({'error': 'No file selected'}), 400
+
+    try:
+        # Save uploaded file
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['AUDIO_FOLDER'], filename)
+        file.save(filepath)
+
+        # Transcribe using Whisper
+        result = whisper_model.transcribe(filepath)
         
-    # Validate style and language
-    if style not in CONTENT_STYLES:
         return jsonify({
-            'error': 'Invalid style selected',
-            'valid_styles': list(CONTENT_STYLES.keys())
-        }), 400
-    
-    if target_lang not in SUPPORTED_LANGUAGES:
+            'transcription': result['text'],
+            'language': result['language']
+        })
+    except Exception as e:
+        logger.error(f'Transcription error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/generate', methods=['POST'])
+def generate_content():
+    data = request.json
+    if not data or 'text' not in data or 'language' not in data or 'style' not in data:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    text = data['text']
+    language = data['language']
+    style = data['style']
+
+    try:
+        # Generate summary
+        summary = summarize(text, language, style)
+
+        # Generate speech
+        audio_path = generate_speech(summary, language, style)
+
+        # Generate video
+        video_id = generate_video(audio_path, style)
+
         return jsonify({
-            'error': 'Unsupported target language',
-            'supported_languages': SUPPORTED_LANGUAGES
-        }), 400
+            'summary': summary,
+            'video_id': video_id
+        })
+    except Exception as e:
+        logger.error(f'Content generation error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/video-status/<video_id>')
+def check_video_status(video_id):
+    try:
+        headers = {'Authorization': f'Basic {did_api_key}'}
+        response = requests.get(f'{did_api_url}/talks/{video_id}', headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            status = data['status']
             
-    style_config = CONTENT_STYLES[style]
-    logger.info(f"Processing {style_config['name']} style summary for {SUPPORTED_LANGUAGES[target_lang]}")
+            if status == 'done':
+                # Download the video
+                video_url = data['result_url']
+                video_response = requests.get(video_url)
+                
+                if video_response.status_code == 200:
+                    # Save the video locally
+                    video_path = os.path.join(app.config['VIDEO_FOLDER'], f'{video_id}.mp4')
+                    with open(video_path, 'wb') as f:
+                        f.write(video_response.content)
+                    
+                    return jsonify({
+                        'status': 'done',
+                        'local_url': f'/video/{video_id}.mp4'
+                    })
+            
+            return jsonify({'status': status})
+        
+        return jsonify({'error': 'Failed to check video status'}), response.status_code
+    except Exception as e:
+        logger.error(f'Video status check error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/video/<path:filename>')
+def serve_video(filename):
+    return send_file(
+        os.path.join(app.config['VIDEO_FOLDER'], filename),
+        mimetype='video/mp4'
+    )
+
+def summarize(text: str, language: str, style: str) -> str:
+    system_prompt = f"You are a professional news content creator. {VOICE_STYLES[style]['prompt']}"
     
-    # Generate styled summary using OpenAI
-    summary_prompt = f"{style_config['prompt']}. Optimize for TikTok/Instagram vertical video format (30-60 seconds):\n\n{text}"
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Summarize this news content in {LANGUAGES[language]['name']}: {text}"}
+    ]
     
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": f"You are {style_config['name']}. Create engaging, mobile-first content that's perfect for social media."},
-            {"role": "user", "content": summary_prompt}
-        ],
-        max_tokens=500,  # Limit response length
-        temperature=0.7  # Balance creativity and consistency
+        model="gpt-4",
+        messages=messages,
+        temperature=0.7,
+        max_tokens=500
     )
     
-    summary = response.choices[0].message.content
-    logger.info(f"Generated {style_config['name']} summary: {summary[:100]}...")
-    
-    if not summary.strip():
-        raise ValueError("Generated summary is empty")
+    return response.choices[0].message.content
 
-    # Translate if needed
-    if target_lang != 'en':
-        logger.info(f"Translating to {SUPPORTED_LANGUAGES[target_lang]}")
-        translation_prompt = f"Translate this {style_config['name']} style content to {SUPPORTED_LANGUAGES[target_lang]}. Maintain the style and tone:\n\n{summary}"
+def generate_speech(text: str, language: str, style: str) -> str:
+    voice = LANGUAGES[language]['voice'][style]
+    model = VOICE_STYLES[style]['model']
+    
+    response = client.audio.speech.create(
+        model=model,
+        voice=voice,
+        input=text
+    )
+    
+    audio_path = os.path.join(app.config['AUDIO_FOLDER'], f'{int(time.time())}.mp3')
+    response.stream_to_file(audio_path)
+    
+    return audio_path
+
+def generate_video(audio_path: str, style: str) -> str:
+    style_params = VOICE_STYLES[style]
+    
+    with open(audio_path, 'rb') as audio_file:
+        files = {
+            'audio': ('audio.mp3', audio_file, 'audio/mpeg')
+        }
         
-        translation_response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": f"You are a creative translator specializing in {style_config['name']} style content."},
-                {"role": "user", "content": translation_prompt}
-            ],
-            max_tokens=600,  # Allow slightly more tokens for translation
-            temperature=0.3  # Lower temperature for more accurate translations
+        payload = {
+            'source_url': f"d-id://avatar/{style_params['avatar_id']}",
+            'config': {
+                'result_format': 'mp4',
+                'style': style_params['video_style']
+            }
+        }
+        
+        headers = {
+            'Authorization': f'Basic {did_api_key}'
+        }
+        
+        response = requests.post(
+            f'{did_api_url}/talks',
+            headers=headers,
+            data={'json': json.dumps(payload)},
+            files=files
         )
         
-        translated_summary = translation_response.choices[0].message.content
-        if not translated_summary.strip():
-            raise ValueError("Translation returned empty result")
-            
-        summary = translated_summary
-        logger.info(f"Translation completed: {summary[:100]}...")
-
-    # Prepare response with metadata
-    response_data = {
-        'summary': summary,
-        'metadata': {
-            'style': style_config['name'],
-            'voice_style': style_config['voice'],
-            'video_style': style_config['video_style'],
-            'language': SUPPORTED_LANGUAGES[target_lang],
-            'original_length': len(text),
-            'summary_length': len(summary)
-        }
-    }
-    
-    logger.info(f"Successfully processed request for {style_config['name']} in {SUPPORTED_LANGUAGES[target_lang]}")
-    return jsonify(response_data)
-
-
-
-@app.route('/api/generate-speech', methods=['POST'])
-@validate_request({'text': str, 'voice_style': str})
-@handle_api_error
-def generate_speech():
-    data = request.json
-    text = data['text'].strip()
-    voice_style = data['voice_style']
-    language_code = data.get('language_code', 'en-US')
-    
-    if len(text) < 1 or len(text) > 5000:
-        return jsonify({'error': 'Text length must be between 1 and 5000 characters'}), 400
-
-    # Configure TTS request
-    synthesis_input = texttospeech.SynthesisInput(text=text)
-    
-    # Select voice based on style
-    voice_params = texttospeech.VoiceSelectionParams(
-        language_code=language_code,
-        name=f"{language_code}-Wavenet-D"  # Using Wavenet for better quality
-    )
-    
-    # Configure audio settings
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=1.0,  # Normal speed
-        pitch=0.0  # Normal pitch
-    )
-
-    # Generate speech
-    logger.info(f"Generating speech for text of length {len(text)} in {language_code}")
-    response = tts_client.synthesize_speech(
-        input=synthesis_input,
-        voice=voice_params,
-        audio_config=audio_config
-    )
-
-    if not response.audio_content:
-        raise ValueError("No audio content generated")
-
-    # Save the audio file with a secure filename
-    output_filename = secure_filename(f"speech_{int(time.time())}.mp3")
-    output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
-    
-    with open(output_path, "wb") as out:
-        out.write(response.audio_content)
-
-    logger.info(f"Successfully generated speech file: {output_filename}")
-    return jsonify({
-        'filename': output_filename,
-        'url': f'/uploads/{output_filename}',
-        'metadata': {
-            'language': language_code,
-            'voice_style': voice_style,
-            'duration_seconds': len(response.audio_content) / 16000  # Approximate duration
-        }
-    })
-
-@app.route('/api/generate-video', methods=['POST'])
-@validate_request({'text': str, 'style': str})
-@handle_api_error
-def generate_video():
-    data = request.json
-    text = data['text']
-    style = data['style']
-    
-    if len(text) < 1 or len(text) > 5000:
-        return jsonify({'error': 'Text length must be between 1 and 5000 characters'}), 400
-    
-    if style not in CONTENT_STYLES:
-        return jsonify({
-            'error': 'Invalid style selected',
-            'valid_styles': list(CONTENT_STYLES.keys())
-        }), 400
-    
-    style_config = CONTENT_STYLES[style]
-    
-    # For now, return a mock response
-    logger.info(f"Video generation requested for style: {style}")
-    return jsonify({
-        'status': 'success',
-        'message': 'Video generation endpoint placeholder',
-        'metadata': {
-            'style': style_config['name'],
-            'video_style': style_config['video_style']
-        }
-    })
-
-@app.route('/uploads/<path:filename>')
-@handle_api_error
-def serve_file(filename):
-    if not filename or '..' in filename:
-        return jsonify({'error': 'Invalid filename'}), 400
-    
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(filename))
-    if not os.path.exists(file_path):
-        return jsonify({'error': 'File not found'}), 404
-        
-    return send_file(file_path)
+        if response.status_code == 201:
+            return response.json()['id']
+        else:
+            raise Exception(f'Failed to generate video: {response.text}')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5004)
+    app.run(debug=True, port=5005)

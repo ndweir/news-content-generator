@@ -1,3 +1,10 @@
+/* Animations */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
 /* Base Styles */
 :root {
     --primary-color: #2d3436;
@@ -95,6 +102,45 @@ body.squarespace-embed {
     background: rgba(9, 132, 227, 0.1);
     border-color: var(--accent-color);
     color: var(--accent-color);
+}
+
+/* Video Player Styles */
+.mock-video {
+    transition: all 0.3s ease;
+    background: linear-gradient(45deg, #2a2a2a, #1a1a1a);
+    border-radius: 12px;
+    padding: 2rem;
+    color: white;
+    text-align: center;
+}
+
+.mock-video:hover {
+    transform: scale(1.02);
+}
+
+.video-controls button {
+    transition: opacity 0.3s ease;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    margin: 0 0.5rem !important;
+}
+
+.video-controls button:hover {
+    opacity: 1 !important;
+    transform: scale(1.05);
+}
+
+.progress-bar {
+    transition: width 0.1s linear;
+}
+
+.video-preview {
+    max-width: 360px;
+    margin: 2rem auto;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .language-name {

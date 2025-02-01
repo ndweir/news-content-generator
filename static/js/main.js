@@ -1,159 +1,120 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize style selection
-    const styleOptions = document.querySelectorAll('.style-option');
-    styleOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            styleOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-            this.querySelector('input[type="radio"]').checked = true;
-        });
-    });
-    const form = document.getElementById('newsForm');
-    const progressArea = document.getElementById('progressArea');
-    const progressBar = document.querySelector('.progress-bar');
-    const statusText = document.getElementById('statusText');
-    const generateBtn = document.getElementById('generateBtn');
-    const resultsArea = document.getElementById('results');
+    const form = document.getElementById('videoForm');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const progressBar = videoPlayer.querySelector('.progress-bar');
+    const submitBtn = form.querySelector('button[type="submit"]');
     
-    // Add animation classes to elements as they appear
-    const animateElement = (element, animation) => {
-        element.classList.add('animate__animated', animation);
-        element.addEventListener('animationend', () => {
-            element.classList.remove('animate__animated', animation);
-        });
+    // Style configuration
+    const styleColors = {
+        ruff: '#FFD700',
+        felix: '#FF69B4',
+        cronkite: '#4169E1',
+        wordgirl: '#32CD32',
+        anime: '#FF4500'
     };
 
+    const styleIcons = {
+        ruff: '🐶',
+        felix: '🐱',
+        cronkite: '🎙️',
+        wordgirl: '📚',
+        anime: '🎨'
+    };
+
+    // Style selector functionality
+    const styleOptions = document.querySelectorAll('.style-option');
+    let currentStyle = 'ruff';
+
+    styleOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            styleOptions.forEach(opt => opt.classList.remove('active'));
+            option.classList.add('active');
+            currentStyle = option.dataset.style;
+            updatePlayerStyle(currentStyle);
+        });
+    });
+
+    function updatePlayerStyle(style) {
+        const icon = videoPlayer.querySelector('.style-icon');
+        icon.textContent = styleIcons[style];
+        videoPlayer.style.background = `linear-gradient(45deg, ${styleColors[style]}22, ${styleColors[style]}11)`;
+        progressBar.style.background = styleColors[style];
+    }
+
+    // Form submission and video generation
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        // Get selected languages
-        const selectedLanguages = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-            .map(cb => cb.value);
-            
-        if (selectedLanguages.length === 0) {
-            alert('Please select at least one target language');
-            return;
-        }
-
         const articleText = document.getElementById('articleText').value.trim();
         if (!articleText) {
-            alert('Please enter the article text');
+            alert('Please enter some text');
             return;
         }
 
-        // Show progress area and disable submit button
-        progressArea.classList.remove('d-none');
-        generateBtn.disabled = true;
-        resultsArea.innerHTML = '';
+        submitBtn.disabled = true;
+        progressBar.style.width = '0%';
+        videoPlayer.classList.add('generating');
         
         try {
-            for (const lang of selectedLanguages) {
-                // Update progress
-                const progress = (selectedLanguages.indexOf(lang) / selectedLanguages.length) * 100;
-                progressBar.style.width = `${progress}%`;
-                statusText.textContent = `Processing ${lang.toUpperCase()}...`;
+            // Generate summary
+            progressBar.style.width = '30%';
+            const summaryResponse = await fetch('/api/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: articleText,
+                    target_language: 'en',
+                    style: currentStyle
+                })
+            });
 
-                // Step 1: Generate summary
-                const summaryResponse = await fetch('/api/summarize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        text: articleText,
-                        target_language: lang
-                    })
-                });
+            if (!summaryResponse.ok) throw new Error('Summary generation failed');
+            const summaryData = await summaryResponse.json();
 
-                if (!summaryResponse.ok) throw new Error(`Summary generation failed for ${lang}`);
-                const summaryData = await summaryResponse.json();
+            // Generate video
+            progressBar.style.width = '60%';
+            const videoResponse = await fetch('/api/generate-video', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: summaryData.summary,
+                    style: currentStyle
+                })
+            });
 
-                // Step 2: Generate speech
-                const speechResponse = await fetch('/api/generate-speech', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        text: summaryData.summary,
-                        language_code: lang
-                    })
-                });
+            if (!videoResponse.ok) throw new Error('Video generation failed');
+            const videoData = await videoResponse.json();
 
-                if (!speechResponse.ok) throw new Error(`Speech generation failed for ${lang}`);
-                const speechData = await speechResponse.json();
-
-                // Step 3: Generate video
-                const videoResponse = await fetch('/api/generate-video', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        audio_path: speechData.audio_path
-                    })
-                });
-
-                if (!videoResponse.ok) throw new Error(`Video generation failed for ${lang}`);
-                const videoData = await videoResponse.json();
-
-                // Add results to the page with animation
-                const resultCard = document.createElement('div');
-                resultCard.className = 'result-card';
-                resultCard.innerHTML = `
-                    <h4>${getLangName(lang)} Version</h4>
-                    <div class="summary-text">
-                        <strong>Summary:</strong>
-                        <p class="summary-content">${summaryData.summary}</p>
-                    </div>
-                    <div class="video-container">
-                        <strong>Generated Video:</strong>
-                        <div class="video-status">
-                            <span class="status-icon">✓</span>
-                            <span>Video generated successfully!</span>
-                        </div>
-                        <div class="audio-preview mt-3">
-                            <p class="audio-label">Preview Audio:</p>
-                            <audio controls src="/uploads/${speechData.audio_path}" class="custom-audio"></audio>
-                        </div>
-                        <div class="video-info mt-2">
-                            <small class="text-muted">Video ID: ${videoData.talk_id}</small>
-                        </div>
-                    </div>
-                `;
-                resultsArea.appendChild(resultCard);
-                animateElement(resultCard, 'animate__fadeInUp');
-            }
-
-            // Complete progress bar with success animation
-            progressBar.style.width = '100%';
-            statusText.textContent = 'All content generated successfully!';
-            animateElement(statusText, 'animate__pulse');
-            
-            // Show success message
-            const successMessage = document.createElement('div');
-            successMessage.className = 'alert alert-success mt-3 animate__animated animate__fadeIn';
-            successMessage.innerHTML = `
-                <strong>Success!</strong> Your content has been generated in ${selectedLanguages.length} language${selectedLanguages.length > 1 ? 's' : ''}.
+            // Update player with generated content
+            videoPlayer.innerHTML = `
+                <div class="style-icon" style="font-size: 48px">${styleIcons[currentStyle]}</div>
+                <h3 class="mb-3" style="color: ${styleColors[currentStyle]}">${currentStyle.toUpperCase()} Style</h3>
+                <div class="summary-text mb-4" style="font-size: 14px; padding: 0 20px;">
+                    ${summaryData.summary}
+                </div>
+                <div class="video-controls mb-3">
+                    <button class="btn btn-light btn-sm mx-1" onclick="window.location.reload()">🔄 New Video</button>
+                </div>
+                <div class="progress" style="width: 80%; height: 4px; background: rgba(255,255,255,0.2);">
+                    <div class="progress-bar" role="progressbar" style="width: 100%; background: ${styleColors[currentStyle]}"></div>
+                </div>
             `;
-            progressArea.appendChild(successMessage);
-            
+
+            // Start video animation
+            videoPlayer.style.animation = 'pulse 2s infinite';
+
         } catch (error) {
             console.error('Error:', error);
-            statusText.textContent = `Error: ${error.message}`;
-            progressBar.classList.add('bg-danger');
+            videoPlayer.innerHTML = `
+                <div class="style-icon" style="font-size: 48px">⚠️</div>
+                <h3 class="mb-3" style="color: #dc3545">Error</h3>
+                <p class="mb-4">${error.message}</p>
+                <button class="btn btn-light btn-sm" onclick="window.location.reload()">🔄 Try Again</button>
+            `;
         } finally {
-            generateBtn.disabled = false;
+            submitBtn.disabled = false;
         }
     });
-
-    function getLangName(code) {
-        const langMap = {
-            'en': 'English',
-            'es': 'Spanish',
-            'hmn': 'Hmong',
-            'so': 'Somali'
-        };
-        return langMap[code] || code.toUpperCase();
-    }
 });
+
+
