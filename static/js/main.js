@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return group;
     }
+
     // Initialize all option groups
     const form = document.getElementById('newsForm');
     const inputGroup = initOptionGroup('.option-group:has([data-input])');
@@ -35,10 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.input-section').forEach(section => {
             section.style.display = section.id === `${inputType}Input` ? 'block' : 'none';
         });
-
-        // Show/hide voice style based on input type
-        const voiceStyleSection = document.querySelector('.voice-style-section');
-        voiceStyleSection.style.display = inputType === 'text' ? 'block' : 'none';
     });
 
     // Handle output format changes
@@ -109,112 +106,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize all file uploads
     ['audio', 'video', 'srt'].forEach(initFileUpload);
-    const videoPlayer = document.getElementById('videoPlayer');
-    const progressBar = videoPlayer.querySelector('.progress-bar');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    
-    // Animation style configuration
-    const styleConfig = {
-        avatar: {
-            color: '#4CAF50',
-            icon: '👤',
-            previewBg: 'linear-gradient(45deg, #4CAF50 10%, #2E7D32 90%)'
-        },
-        cartoon: {
-            color: '#FF9800',
-            icon: '😊',
-            previewBg: 'linear-gradient(45deg, #FF9800 10%, #F57C00 90%)'
-        },
-        anime: {
-            color: '#E91E63',
-            icon: '⭐',
-            previewBg: 'linear-gradient(45deg, #E91E63 10%, #C2185B 90%)'
-        },
-        claymation: {
-            color: '#9C27B0',
-            icon: '🎨',
-            previewBg: 'linear-gradient(45deg, #9C27B0 10%, #7B1FA2 90%)'
-        }
-    };
 
-    // Handle animation style selection
-    const animationStyleGroup = document.querySelector('.animation-styles');
-    let currentStyle = 'avatar';
-
-    animationStyleGroup.addEventListener('click', (e) => {
-        const chip = e.target.closest('.option-chip');
-        if (!chip) return;
-
-        const style = chip.dataset.style;
-        currentStyle = style;
-        updatePreviewStyle(style);
-
-        // Show/hide corresponding character group
-        document.querySelectorAll('.character-group').forEach(group => {
-            group.style.display = group.dataset.style === style ? 'grid' : 'none';
-        });
-    });
-
-    // Handle character selection
-    const characterGrid = document.querySelector('.character-grid');
-    characterGrid.addEventListener('click', (e) => {
-        const option = e.target.closest('.character-option');
-        if (!option) return;
-
-        // Update active state within the same style group
-        const group = option.closest('.character-group');
-        group.querySelectorAll('.character-option').forEach(opt => {
-            opt.classList.remove('active');
-        });
-        option.classList.add('active');
-    });
-
-    function updatePreviewStyle(style) {
-        const config = styleConfig[style];
-        if (!config) return;
-
-        const preview = document.querySelector('.video-preview');
-        if (preview) {
-            preview.style.background = config.previewBg;
-        }
-
-        const icon = document.querySelector('.style-icon');
-        if (icon) {
-            icon.textContent = config.icon;
-        }
-    }
-
-    // Video Preview Fullscreen
+    // Video Preview Handling
     const videoPreview = document.getElementById('videoPreview');
+    const video = videoPreview.querySelector('video');
     const expandBtn = document.getElementById('expandBtn');
-    let isFullscreen = false;
+    const previewState = videoPreview.querySelector('.preview-state');
+    const processingState = videoPreview.querySelector('.processing-state');
 
-    function toggleFullscreen() {
-        isFullscreen = !isFullscreen;
-        if (isFullscreen) {
-            videoPreview.classList.add('fullscreen');
-            expandBtn.querySelector('i').className = 'bi bi-fullscreen-exit';
-            document.body.style.overflow = 'hidden';
+    // Toggle fullscreen
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            videoPreview.requestFullscreen().catch(err => {
+                console.log(`Error attempting to enable fullscreen: ${err.message}`);
+            });
         } else {
-            videoPreview.classList.remove('fullscreen');
-            expandBtn.querySelector('i').className = 'bi bi-arrows-fullscreen';
-            document.body.style.overflow = '';
+            document.exitFullscreen();
         }
     }
 
+    // Handle expand button click
     expandBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleFullscreen();
+        toggleFullScreen();
     });
 
+    // Handle video preview click
     videoPreview.addEventListener('click', () => {
-        toggleFullscreen();
+        toggleFullScreen();
     });
 
-    // Close fullscreen on escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && isFullscreen) {
-            toggleFullscreen();
+    // Handle fullscreen change
+    document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+            videoPreview.classList.add('fullscreen');
+            video.controls = true;
+        } else {
+            videoPreview.classList.remove('fullscreen');
+            video.controls = false;
         }
     });
 
@@ -229,10 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('inputType', inputType);
         
         // Show processing state
-        const videoPreview = document.getElementById('videoPreview');
-        const previewState = videoPreview.querySelector('.preview-state');
-        const processingState = videoPreview.querySelector('.processing-state');
-        
         previewState.classList.add('hidden');
         processingState.style.display = 'flex';
         
@@ -246,105 +171,61 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Get selected languages
-        const languages = Array.from(document.querySelectorAll('.language-selector .active'))
-            .map(chip => chip.dataset.lang);
+        const languages = [];
+        document.querySelectorAll('[data-lang].active').forEach(lang => {
+            languages.push(lang.dataset.lang);
+        });
         languages.forEach(lang => formData.append('languages[]', lang));
         
         // Get selected output formats
-        const outputFormats = Array.from(document.querySelectorAll('.output-selector .active'))
-            .map(chip => chip.dataset.output);
+        const outputFormats = [];
+        document.querySelectorAll('[data-output].active').forEach(output => {
+            outputFormats.push(output.dataset.output);
+        });
         outputFormats.forEach(format => formData.append('outputFormats[]', format));
         
-        // Get style
-        const style = document.querySelector('.style-selector .active').dataset.style;
+        // Get animation style
+        const style = document.querySelector('[data-style].active').dataset.style;
         formData.append('style', style);
         
-        // Handle closed captions if video output is selected
-        if (outputFormats.includes('video')) {
-            const ccType = document.querySelector('.cc-selector .active').dataset.cc;
-            formData.append('ccType', ccType);
-            
-            if (ccType === 'upload') {
-                languages.forEach(lang => {
-                    const ccFile = document.getElementById('srtFile').files[0];
-                    if (ccFile) {
-                        formData.append(`cc_file_${lang}`, ccFile);
-                    }
-                });
+        // Get CC preference
+        const ccType = document.querySelector('[data-cc].active').dataset.cc;
+        formData.append('ccType', ccType);
+        
+        if (ccType === 'upload') {
+            const srtFile = document.getElementById('srtFile').files[0];
+            if (srtFile) {
+                formData.append('srtFile', srtFile);
             }
         }
-        e.preventDefault();
-        
-        const articleText = document.getElementById('articleText').value.trim();
-        if (!articleText) {
-            alert('Please enter some text');
-            return;
-        }
-
-        submitBtn.disabled = true;
-        progressBar.style.width = '0%';
-        videoPlayer.classList.add('generating');
         
         try {
-            // Generate summary
-            progressBar.style.width = '30%';
-            const summaryResponse = await fetch('/api/summarize', {
+            const response = await fetch('/api/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text: articleText,
-                    target_language: 'en',
-                    style: currentStyle
-                })
+                body: formData
             });
-
-            if (!summaryResponse.ok) throw new Error('Summary generation failed');
-            const summaryData = await summaryResponse.json();
-
-            // Generate video
-            progressBar.style.width = '60%';
-            const videoResponse = await fetch('/api/generate-video', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text: summaryData.summary,
-                    style: currentStyle
-                })
-            });
-
-            if (!videoResponse.ok) throw new Error('Video generation failed');
-            const videoData = await videoResponse.json();
-
-            // Update player with generated content
-            videoPlayer.innerHTML = `
-                <div class="style-icon" style="font-size: 48px">${styleIcons[currentStyle]}</div>
-                <h3 class="mb-3" style="color: ${styleColors[currentStyle]}">${currentStyle.toUpperCase()} Style</h3>
-                <div class="summary-text mb-4" style="font-size: 14px; padding: 0 20px;">
-                    ${summaryData.summary}
-                </div>
-                <div class="video-controls mb-3">
-                    <button class="btn btn-light btn-sm mx-1" onclick="window.location.reload()">🔄 New Video</button>
-                </div>
-                <div class="progress" style="width: 80%; height: 4px; background: rgba(255,255,255,0.2);">
-                    <div class="progress-bar" role="progressbar" style="width: 100%; background: ${styleColors[currentStyle]}"></div>
-                </div>
-            `;
-
-            // Start video animation
-            videoPlayer.style.animation = 'pulse 2s infinite';
-
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Update video source with the new URL
+                video.src = result.data.video_url;
+                video.load(); // Reload the video
+                video.play(); // Start playing
+                
+                // Hide processing state and show preview
+                processingState.style.display = 'none';
+                previewState.classList.remove('hidden');
+            } else {
+                // Handle error
+                console.error('Generation failed:', result.error);
+                processingState.style.display = 'none';
+                previewState.classList.remove('hidden');
+            }
         } catch (error) {
-            console.error('Error:', error);
-            videoPlayer.innerHTML = `
-                <div class="style-icon" style="font-size: 48px">⚠️</div>
-                <h3 class="mb-3" style="color: #dc3545">Error</h3>
-                <p class="mb-4">${error.message}</p>
-                <button class="btn btn-light btn-sm" onclick="window.location.reload()">🔄 Try Again</button>
-            `;
-        } finally {
-            submitBtn.disabled = false;
+            console.error('Error during generation:', error);
+            processingState.style.display = 'none';
+            previewState.classList.remove('hidden');
         }
     });
 });
-
-
