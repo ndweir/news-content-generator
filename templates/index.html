@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multilingual News Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="squarespace-embed">
+    <div class="container py-4">
+        <div class="generator-container animate__animated animate__fadeIn">
+            <div class="text-center mb-4">
+                <h2 class="heading-primary">Transform Your News</h2>
+                <p class="heading-subtitle">Create engaging multilingual content for your community</p>
+            </div>
+                        <form id="newsForm" class="custom-form">
+                            <div class="form-group mb-4">
+                                <label for="articleText" class="form-label">Your News Article</label>
+                                <textarea class="form-control custom-input" id="articleText" rows="6" required 
+                                    placeholder="Paste your article text here..."></textarea>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label class="form-label">Target Languages</label>
+                                <div class="language-grid">
+                                    {% for code, name in languages.items() %}
+                                    <div class="language-option">
+                                        <input class="language-checkbox" type="checkbox" value="{{ code }}" id="lang_{{ code }}">
+                                        <label class="language-label" for="lang_{{ code }}">
+                                            <span class="language-name">{{ name }}</span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-generate" id="generateBtn">
+                                <span class="btn-text">Generate Content</span>
+                                <span class="btn-icon">→</span>
+                            </button>
+                        </form>
+
+                        <div id="progressArea" class="progress-section mt-4 d-none">
+                            <div class="progress-wrapper mb-3">
+                                <div class="progress custom-progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div id="statusText" class="status-message"></div>
+                        </div>
+
+                        <div id="results" class="results-grid mt-4">
+                            <div id="summaryResults" class="summaries-container"></div>
+                            <div id="videoResults" class="videos-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+/* Base Styles */
+:root {
+    --primary-color: #2d3436;
+    --accent-color: #0984e3;
+    --success-color: #00b894;
+    --error-color: #d63031;
+    --background-color: #ffffff;
+    --border-radius: 12px;
+    --transition: all 0.3s ease;
+}
+
+body.squarespace-embed {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--primary-color);
+    background: transparent;
+    line-height: 1.6;
+}
+
+/* Container Styles */
+.generator-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: var(--background-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Typography */
+.heading-primary {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.heading-subtitle {
+    font-size: 1.1rem;
+    color: #636e72;
+    font-weight: 400;
+}
+
+/* Form Styles */
+.custom-form {
+    margin-top: 2rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.custom-input {
+    border: 2px solid #dfe6e9;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.custom-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.1);
+}
+
+/* Language Selection */
+.language-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.language-option {
+    position: relative;
+}
+
+.language-checkbox {
+    display: none;
+}
+
+.language-label {
+    display: block;
+    padding: 0.8rem 1rem;
+    background: #f5f6fa;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+.language-checkbox:checked + .language-label {
+    background: rgba(9, 132, 227, 0.1);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.language-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Button Styles */
+.btn-generate {
+    background: var(--accent-color);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: var(--border-radius);
+    border: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    transition: var(--transition);
+}
+
+.btn-generate:hover {
+    background: #0773c5;
+    transform: translateY(-1px);
+}
+
+.btn-generate:disabled {
+    background: #b2bec3;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-icon {
+    font-size: 1.2rem;
+}
+
+/* Progress Bar */
+.progress-section {
+    background: #f5f6fa;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin-top: 2rem;
+}
+
+.progress-wrapper {
+    background: #dfe6e9;
+    border-radius: 100px;
+    overflow: hidden;
+}
+
+.custom-progress {
+    height: 10px;
+    background: transparent;
+}
+
+.progress-bar {
+    background: var(--accent-color);
+    transition: width 0.4s ease;
+}
+
+.status-message {
+    text-align: center;
+    font-weight: 500;
+    margin-top: 1rem;
+    color: #636e72;
+}
+
+/* Results Section */
+.results-grid {
+    display: grid;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.result-card {
+    background: #f5f6fa;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.result-card h4 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.video-container {
+    margin-top: 1rem;
+    background: white;
+    padding: 1rem;
+    border-radius: calc(var(--border-radius) - 4px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .generator-container {
+        padding: 1rem;
+    }
+
+    .heading-primary {
+        font-size: 2rem;
+    }
+
+    .language-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}
